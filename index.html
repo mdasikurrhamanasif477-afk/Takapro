@@ -1,0 +1,977 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Earning Pro - Admin Panel (Updated)</title>
+    <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        :root {
+            --primary: #3b82f6;
+            --secondary: #1e293b;
+            --accent: #f59e0b;
+            --success: #10b981;
+            --danger: #ef4444;
+            --dark: #0f172a;
+            --card-bg: #1e293b;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --border: #334155;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Hind Siliguri', sans-serif; }
+        
+        body { background-color: var(--dark); color: var(--text-main); height: 100vh; display: flex; overflow: hidden; }
+
+        /* Login Screen */
+        #login-screen {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(135deg, #0f172a, #1e293b);
+            display: flex; justify-content: center; align-items: center; z-index: 9999;
+        }
+        .login-box {
+            background: var(--card-bg); padding: 40px; border-radius: 15px;
+            width: 100%; max-width: 400px; border: 1px solid var(--border);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+        }
+        .login-box h2 { text-align: center; color: var(--primary); margin-bottom: 20px; }
+        .form-group { margin-bottom: 15px; }
+        .form-control {
+            width: 100%; padding: 12px; background: #0f172a; border: 1px solid var(--border);
+            border-radius: 8px; color: white; outline: none;
+        }
+        .form-control:focus { border-color: var(--primary); }
+        .btn-login {
+            width: 100%; padding: 12px; background: var(--primary); color: white;
+            border: none; border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.3s;
+        }
+        .btn-login:hover { background: #2563eb; }
+
+        /* Admin Layout */
+        #admin-panel { display: none; width: 100%; height: 100%; }
+        
+        /* Sidebar */
+        .sidebar {
+            width: 260px; background: var(--secondary); border-right: 1px solid var(--border);
+            display: flex; flex-direction: column; height: 100%;
+        }
+        .sidebar-header {
+            padding: 20px; border-bottom: 1px solid var(--border);
+            display: flex; align-items: center; gap: 10px;
+        }
+        .logo-icon { font-size: 1.5rem; color: var(--primary); }
+        .logo-text { font-size: 1.2rem; font-weight: bold; }
+        
+        .nav-links { padding: 20px 0; flex: 1; overflow-y: auto; }
+        .nav-item {
+            padding: 12px 20px; cursor: pointer; color: var(--text-muted);
+            display: flex; align-items: center; gap: 12px; transition: 0.2s;
+        }
+        .nav-item:hover, .nav-item.active {
+            background: rgba(59, 130, 246, 0.1); color: var(--primary); border-right: 3px solid var(--primary);
+        }
+        .logout-btn {
+            padding: 15px; border-top: 1px solid var(--border);
+            color: var(--danger); cursor: pointer; display: flex; align-items: center; gap: 10px;
+        }
+        .logout-btn:hover { background: rgba(239, 68, 68, 0.1); }
+
+        /* Main Content */
+        .main-content { flex: 1; display: flex; flex-direction: column; overflow: hidden; background: #0b1120; }
+        
+        .top-bar {
+            height: 60px; background: var(--card-bg); border-bottom: 1px solid var(--border);
+            display: flex; justify-content: space-between; align-items: center; padding: 0 20px;
+        }
+        .page-title { font-size: 1.2rem; font-weight: 600; }
+        .admin-profile { display: flex; align-items: center; gap: 10px; }
+        .admin-avatar { width: 35px; height: 35px; background: var(--primary); border-radius: 50%; display: flex; justify-content: center; align-items: center; }
+
+        .content-area { flex: 1; overflow-y: auto; padding: 20px; }
+
+        /* Dashboard Stats */
+        .stats-grid {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 20px; margin-bottom: 30px;
+        }
+        .stat-card {
+            background: var(--card-bg); padding: 20px; border-radius: 12px;
+            border: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center;
+        }
+        .stat-info h3 { font-size: 0.9rem; color: var(--text-muted); margin-bottom: 5px; }
+        .stat-info p { font-size: 1.8rem; font-weight: bold; }
+        .stat-icon {
+            width: 50px; height: 50px; border-radius: 10px; display: flex; justify-content: center; align-items: center; font-size: 1.5rem;
+        }
+        .bg-blue { background: rgba(59, 130, 246, 0.2); color: #3b82f6; }
+        .bg-green { background: rgba(16, 185, 129, 0.2); color: #10b981; }
+        .bg-red { background: rgba(239, 68, 68, 0.2); color: #ef4444; }
+        .bg-yellow { background: rgba(245, 158, 11, 0.2); color: #f59e0b; }
+
+        /* Tables */
+        .table-container {
+            background: var(--card-bg); border-radius: 12px; border: 1px solid var(--border); overflow: hidden;
+            margin-bottom: 20px;
+        }
+        .table-header { padding: 15px 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 12px 20px; text-align: left; border-bottom: 1px solid var(--border); font-size: 0.85rem; }
+        th { background: rgba(0,0,0,0.2); color: var(--text-muted); font-weight: 600; }
+        tr:hover { background: rgba(255,255,255,0.02); }
+        
+        .badge { padding: 4px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; }
+        .badge-pending { background: rgba(245, 158, 11, 0.2); color: #f59e0b; }
+        .badge-approved { background: rgba(16, 185, 129, 0.2); color: #10b981; }
+        .badge-rejected { background: rgba(239, 68, 68, 0.2); color: #ef4444; }
+        .badge-vip { background: rgba(234, 179, 8, 0.2); color: #eab308; border: 1px solid #eab308; }
+
+        .action-btn { padding: 5px 10px; border-radius: 5px; border: none; cursor: pointer; font-size: 0.8rem; color: white; margin-right: 3px; }
+        .btn-approve { background: var(--success); }
+        .btn-reject { background: var(--danger); }
+        .btn-edit { background: var(--primary); }
+        .btn-view { background: var(--secondary); border: 1px solid var(--border); }
+        .btn-email { background: #ea4335; } /* Gmail color */
+
+        /* Forms */
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; margin-bottom: 15px; }
+
+        /* Modal */
+        .modal {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.8); z-index: 1000; display: none;
+            justify-content: center; align-items: center;
+        }
+        .modal-content {
+            background: var(--card-bg); width: 90%; max-width: 500px; padding: 25px;
+            border-radius: 15px; border: 1px solid var(--border);
+        }
+        .modal-header { display: flex; justify-content: space-between; margin-bottom: 20px; }
+        .modal-body textarea, .modal-body input[type="text"], .modal-body input[type="email"] {
+            width: 100%; background: #0f172a; border: 1px solid var(--border); color: white; padding: 10px; border-radius: 8px;
+        }
+        .modal-footer { margin-top: 20px; text-align: right; }
+        .btn-cancel { background: transparent; color: white; border: 1px solid var(--border); padding: 8px 15px; border-radius: 5px; cursor: pointer; margin-right: 10px; }
+        .btn-confirm { background: var(--primary); color: white; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer; }
+
+        /* Sections */
+        .section-view { display: none; animation: fadeIn 0.3s; }
+        .section-view.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* Task Management Styles */
+        .task-add-box {
+            background: rgba(59, 130, 246, 0.1); padding: 15px; border-radius: 8px; border: 1px dashed var(--primary); margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- LOGIN SCREEN -->
+    <div id="login-screen">
+        <div class="login-box">
+            <h2><i class="fas fa-shield-alt"></i> Admin Panel</h2>
+            <div class="form-group">
+                <label style="color: #94a3b8; font-size: 0.9rem;">Username</label>
+                <input type="text" id="admin-user" class="form-control" placeholder="Enter username">
+            </div>
+            <div class="form-group">
+                <label style="color: #94a3b8; font-size: 0.9rem;">Password</label>
+                <input type="password" id="admin-pass" class="form-control" placeholder="Enter password">
+            </div>
+            <button class="btn-login" onclick="handleLogin()">Login</button>
+        </div>
+    </div>
+
+    <!-- ADMIN PANEL -->
+    <div id="admin-panel">
+        <!-- Sidebar -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <i class="fas fa-user-shield logo-icon"></i>
+                <span class="logo-text">Earning Admin</span>
+            </div>
+            <div class="nav-links">
+                <div class="nav-item active" onclick="showSection('dashboard', this)">
+                    <i class="fas fa-home"></i> Dashboard
+                </div>
+                <div class="nav-item" onclick="showSection('withdrawals', this)">
+                    <i class="fas fa-money-bill-wave"></i> Withdrawals
+                </div>
+                <div class="nav-item" onclick="showSection('deposits', this)">
+                    <i class="fas fa-wallet"></i> Deposits
+                </div>
+                <div class="nav-item" onclick="showSection('users', this)">
+                    <i class="fas fa-users"></i> All Users
+                </div>
+                <div class="nav-item" onclick="showSection('members', this)">
+                    <i class="fas fa-crown"></i> Members
+                </div>
+                <div class="nav-item" onclick="showSection('tasks', this)">
+                    <i class="fas fa-tasks"></i> Task Control
+                </div>
+                <div class="nav-item" onclick="showSection('tickets', this)">
+                    <i class="fas fa-headset"></i> Support Tickets
+                </div>
+            </div>
+            <div class="logout-btn" onclick="logout()">
+                <i class="fas fa-sign-out-alt"></i> Logout
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <div class="top-bar">
+                <div style="display:flex; align-items:center; gap:15px;">
+                    <i class="fas fa-bars" style="cursor:pointer; display:none;" id="menu-toggle" onclick="toggleSidebar()"></i>
+                    <div class="page-title" id="page-title">Dashboard</div>
+                </div>
+                <div class="admin-profile">
+                    <span>Super Admin</span>
+                    <div class="admin-avatar"><i class="fas fa-user"></i></div>
+                </div>
+            </div>
+
+            <div class="content-area">
+                
+                <!-- DASHBOARD SECTION -->
+                <div id="dashboard" class="section-view active">
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-info">
+                                <h3>Total Users</h3>
+                                <p id="stat-total-users">0</p>
+                            </div>
+                            <div class="stat-icon bg-blue"><i class="fas fa-users"></i></div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-info">
+                                <h3>Pending Withdraw</h3>
+                                <p id="stat-pending-withdraw">৳ 0</p>
+                            </div>
+                            <div class="stat-icon bg-red"><i class="fas fa-arrow-down"></i></div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-info">
+                                <h3>Pending Deposit</h3>
+                                <p id="stat-pending-deposit">৳ 0</p>
+                            </div>
+                            <div class="stat-icon bg-yellow"><i class="fas fa-arrow-up"></i></div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-info">
+                                <h3>Active Members</h3>
+                                <p id="stat-active-members">0</p>
+                            </div>
+                            <div class="stat-icon bg-green"><i class="fas fa-crown"></i></div>
+                        </div>
+                    </div>
+                    <div class="table-container">
+                        <div class="table-header"><h4>Recent Activity (Global)</h4></div>
+                        <table>
+                            <thead><tr><th>User</th><th>Activity</th><th>Amount</th><th>Status</th></tr></thead>
+                            <tbody id="global-activity-tbody"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- WITHDRAWALS SECTION -->
+                <div id="withdrawals" class="section-view">
+                    <div class="table-container">
+                        <div class="table-header">
+                            <h4>Withdrawal Requests</h4>
+                            <button class="action-btn btn-view" onclick="loadWithdrawals()"><i class="fas fa-sync"></i> Refresh</button>
+                        </div>
+                        <div style="overflow-x:auto;">
+                            <table>
+                                <thead><tr><th>Phone/Account</th><th>Method</th><th>Amount</th><th>Date</th><th>Action</th></tr></thead>
+                                <tbody id="withdraw-tbody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- DEPOSITS SECTION -->
+                <div id="deposits" class="section-view">
+                    <div class="table-container">
+                        <div class="table-header">
+                            <h4>Deposit Requests</h4>
+                            <button class="action-btn btn-view" onclick="loadDeposits()"><i class="fas fa-sync"></i> Refresh</button>
+                        </div>
+                        <div style="overflow-x:auto;">
+                            <table>
+                                <thead><tr><th>Sender</th><th>Method</th><th>TrxID</th><th>Amount</th><th>Action</th></tr></thead>
+                                <tbody id="deposit-tbody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- USERS SECTION (UPDATED WITH IP) -->
+                <div id="users" class="section-view">
+                    <div class="table-container">
+                        <div class="table-header">
+                            <h4>User Management</h4>
+                            <input type="text" id="user-search" class="form-control" style="width: 200px; padding: 5px 10px;" placeholder="Search Phone..." onkeyup="filterUsers()">
+                        </div>
+                        <div style="overflow-x:auto;">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Name</th>
+                                        <th>Phone</th>
+                                        <th>IP Address</th>
+                                        <th>Balance</th>
+                                        <th>Membership</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="user-tbody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- MEMBERSHIP CONTROL SECTION (NEW) -->
+                <div id="members" class="section-view">
+                    <div class="table-container">
+                        <div class="table-header">
+                            <h4>Membership List</h4>
+                            <button class="action-btn btn-view" onclick="loadMembers()"><i class="fas fa-sync"></i> Refresh</button>
+                        </div>
+                        <div style="overflow-x:auto;">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>User</th>
+                                        <th>Phone</th>
+                                        <th>Plan</th>
+                                        <th>Start Date</th>
+                                        <th>End Date</th>
+                                        <th>Status</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="member-tbody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TASK CONTROL SECTION (NEW) -->
+                <div id="tasks" class="section-view">
+                    <div class="task-add-box">
+                        <h4 style="margin-bottom:10px; color:var(--primary);"><i class="fas fa-plus-circle"></i> Add New Task</h4>
+                        <div class="form-grid">
+                            <div>
+                                <label style="font-size:0.8rem; color:#ccc;">Task Type</label>
+                                <select id="task-type" class="form-control">
+                                    <option value="web">Website Visit</option>
+                                    <option value="app">App Install</option>
+                                    <option value="survey">Survey</option>
+                                    <option value="mega">Mega Offer</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label style="font-size:0.8rem; color:#ccc;">Task Link</label>
+                                <input type="text" id="task-link" class="form-control" placeholder="https://...">
+                            </div>
+                            <div>
+                                <label style="font-size:0.8rem; color:#ccc;">Reward (৳)</label>
+                                <input type="number" id="task-reward" class="form-control" placeholder="10">
+                            </div>
+                        </div>
+                        <button class="btn-confirm" onclick="addNewTask()">Add Task to System</button>
+                    </div>
+
+                    <div class="table-container">
+                        <div class="table-header">
+                            <h4>Active Tasks</h4>
+                        </div>
+                        <div style="overflow-x:auto;">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Type</th>
+                                        <th>Link</th>
+                                        <th>Reward</th>
+                                        <th>Added Date</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tasks-tbody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TICKETS SECTION -->
+                <div id="tickets" class="section-view">
+                    <div class="table-container">
+                        <div class="table-header">
+                            <h4>Support Tickets</h4>
+                            <button class="action-btn btn-view" onclick="loadTickets()"><i class="fas fa-sync"></i> Refresh</button>
+                        </div>
+                        <div style="overflow-x:auto;">
+                            <table>
+                                <thead><tr><th>User</th><th>Subject</th><th>Status</th><th>Action</th></tr></thead>
+                                <tbody id="ticket-tbody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </main>
+    </div>
+
+    <!-- ACTION MODAL (Approve/Reject) -->
+    <div id="action-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modal-title">Confirm Action</h3>
+                <i class="fas fa-times" style="cursor:pointer" onclick="closeModal()"></i>
+            </div>
+            <div class="modal-body">
+                <p id="modal-desc" style="margin-bottom: 10px; color: #cbd5e1;">Are you sure?</p>
+                <label style="font-size: 0.8rem; color: #94a3b8;">Admin Note (Optional):</label>
+                <textarea id="admin-note" placeholder="Enter reason or details..."></textarea>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-cancel" onclick="closeModal()">Cancel</button>
+                <button class="btn-confirm" id="modal-confirm-btn">Confirm</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- USER EDIT MODAL -->
+    <div id="user-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Edit User Balance</h3>
+                <i class="fas fa-times" style="cursor:pointer" onclick="closeUserModal()"></i>
+            </div>
+            <div class="modal-body">
+                <p id="edit-user-info" style="margin-bottom: 15px; color: var(--primary);"></p>
+                <div class="form-group">
+                    <label>Current Balance</label>
+                    <input type="text" id="current-bal-display" class="form-control" disabled>
+                </div>
+                <div class="form-group">
+                    <label>New Balance Amount</label>
+                    <input type="number" id="new-balance-input" class="form-control" placeholder="Enter new balance">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-cancel" onclick="closeUserModal()">Cancel</button>
+                <button class="btn-confirm" onclick="saveUserBalance()">Update Balance</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- EMAIL/NOTIFICATION MODAL (NEW) -->
+    <div id="email-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Send Notification / Email</h3>
+                <i class="fas fa-times" style="cursor:pointer" onclick="closeEmailModal()"></i>
+            </div>
+            <div class="modal-body">
+                <p id="email-user-info" style="margin-bottom: 15px; color: var(--accent);"></p>
+                <div class="form-group">
+                    <label>Recipient Email (Gmail)</label>
+                    <input type="email" id="notify-email" class="form-control" placeholder="user@gmail.com">
+                </div>
+                <div class="form-group">
+                    <label>Subject</label>
+                    <input type="text" id="notify-subject" class="form-control" placeholder="Important Update">
+                </div>
+                <div class="form-group">
+                    <label>Message</label>
+                    <textarea id="notify-message" rows="4" placeholder="Type your message here..."></textarea>
+                </div>
+                <div style="font-size: 0.75rem; color: #94a3b8; margin-top: 5px;">
+                    * Clicking 'Send Email' will open your email client. 'Save to App' will show a notification bell in the user app.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-cancel" onclick="closeEmailModal()">Cancel</button>
+                <button class="btn-confirm" style="background:var(--secondary); margin-right:10px;" onclick="saveNotification()">Save to App</button>
+                <button class="btn-confirm" onclick="sendEmail()">Send via Gmail</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- TICKET REPLY MODAL -->
+    <div id="ticket-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Reply Ticket</h3>
+                <i class="fas fa-times" style="cursor:pointer" onclick="closeTicketModal()"></i>
+            </div>
+            <div class="modal-body">
+                <div id="ticket-history-view" style="background: rgba(0,0,0,0.2); padding: 10px; border-radius: 5px; margin-bottom: 10px; max-height: 150px; overflow-y: auto; font-size: 0.85rem;"></div>
+                <textarea id="ticket-reply-text" placeholder="Type your reply..."></textarea>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-cancel" onclick="closeTicketModal()">Cancel</button>
+                <button class="btn-confirm" onclick="submitTicketReply()">Send Reply</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- FIREBASE INITIALIZATION ---
+        const firebaseConfig = {
+            apiKey: "AIzaSyDEFmlb1z_XywhJs_HFhFyECu0WNIQ5NyE",
+            authDomain: "eanrtaka.firebaseapp.com",
+            databaseURL: "https://eanrtaka-default-rtdb.firebaseio.com",
+            projectId: "eanrtaka",
+            storageBucket: "eanrtaka.firebasestorage.app",
+            messagingSenderId: "49744195787",
+            appId: "1:49744195787:web:3439970d0acddbce84eb4e",
+            measurementId: "G-HZ3NECKG9Y"
+        };
+
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
+        const db = firebase.database();
+
+        // --- STATE ---
+        let allUsers = [];
+        let currentAction = null; 
+        let notifyTargetUser = null;
+
+        // --- AUTH ---
+        function handleLogin() {
+            const u = document.getElementById('admin-user').value;
+            const p = document.getElementById('admin-pass').value;
+            if (u === 'admin' && p === '1234') {
+                document.getElementById('login-screen').style.display = 'none';
+                document.getElementById('admin-panel').style.display = 'flex';
+                initDashboard();
+            } else {
+                alert('Invalid Credentials! (Try: admin / 1234)');
+            }
+        }
+
+        function logout() { location.reload(); }
+
+        // --- NAVIGATION ---
+        function showSection(id, element) {
+            document.querySelectorAll('.section-view').forEach(el => el.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+            if(element) element.classList.add('active');
+
+            const titles = {
+                'dashboard': 'Dashboard', 'withdrawals': 'Withdrawals', 'deposits': 'Deposits',
+                'users': 'User Management', 'members': 'Membership Control', 'tasks': 'Task Control', 'tickets': 'Support Tickets'
+            };
+            document.getElementById('page-title').innerText = titles[id];
+
+            if(id === 'withdrawals') loadWithdrawals();
+            if(id === 'deposits') loadDeposits();
+            if(id === 'users') loadUsers();
+            if(id === 'members') loadMembers();
+            if(id === 'tasks') loadTasks();
+            if(id === 'tickets') loadTickets();
+        }
+
+        function toggleSidebar() { document.getElementById('sidebar').classList.toggle('show'); }
+
+        // --- DASHBOARD LOGIC ---
+        async function initDashboard() {
+            const snapshot = await db.ref('users').once('value');
+            if (snapshot.exists()) {
+                const data = snapshot.val();
+                allUsers = Object.keys(data).map(key => ({ phone: key, ...data[key] }));
+                
+                let pendingW = 0, pendingD = 0, activeMembers = 0, activities = [];
+
+                allUsers.forEach(user => {
+                    if(user.membership && user.membership.status === 'active') activeMembers++;
+                    if(user.withdrawals) {
+                        user.withdrawals.forEach(w => {
+                            if(w.status === 'Pending') pendingW += parseFloat(w.amount);
+                            activities.push({ user: user.name || user.phone, type: 'Withdrawal', amount: w.amount, status: w.status, date: w.date });
+                        });
+                    }
+                    if(user.deposits) {
+                        user.deposits.forEach(d => {
+                            if(d.status === 'Pending') pendingD += parseFloat(d.amount);
+                            activities.push({ user: user.name || user.phone, type: 'Deposit', amount: d.amount, status: d.status, date: d.date });
+                        });
+                    }
+                });
+
+                document.getElementById('stat-total-users').innerText = allUsers.length;
+                document.getElementById('stat-pending-withdraw').innerText = '৳ ' + pendingW.toFixed(2);
+                document.getElementById('stat-pending-deposit').innerText = '৳ ' + pendingD.toFixed(2);
+                document.getElementById('stat-active-members').innerText = activeMembers;
+
+                activities.sort((a,b) => new Date(b.date) - new Date(a.date));
+                const activityTbody = document.getElementById('global-activity-tbody');
+                activityTbody.innerHTML = '';
+                activities.slice(0, 5).forEach(act => {
+                    activityTbody.innerHTML += `
+                        <tr>
+                            <td>${act.user}</td><td>${act.type}</td><td>৳${act.amount}</td>
+                            <td><span class="badge badge-${act.status.toLowerCase()}">${act.status}</span></td>
+                        </tr>`;
+                });
+            }
+        }
+
+        // --- USERS (UPDATED WITH IP & EMAIL) ---
+        function loadUsers() {
+            const tbody = document.getElementById('user-tbody');
+            tbody.innerHTML = '';
+            
+            allUsers.forEach(user => {
+                let memStatus = 'Free';
+                if(user.membership && user.membership.status === 'active') memStatus = user.membership.planType;
+                
+                // Show IP
+                const userIP = user.ip ? user.ip : '<span style="color:#666">Unknown</span>';
+
+                const row = `
+                    <tr>
+                        <td>${user.name || 'No Name'}</td>
+                        <td>${user.phone}</td>
+                        <td style="font-family:monospace; font-size:0.8rem;">${userIP}</td>
+                        <td>৳${parseFloat(user.balance || 0).toFixed(2)}</td>
+                        <td><span class="badge badge-approved">${memStatus}</span></td>
+                        <td>
+                            <button class="action-btn btn-edit" onclick="openUserModal('${user.phone}')"><i class="fas fa-edit"></i></button>
+                            <button class="action-btn btn-email" onclick="openEmailModal('${user.phone}')"><i class="fas fa-envelope"></i></button>
+                        </td>
+                    </tr>
+                `;
+                tbody.innerHTML += row;
+            });
+        }
+
+        function filterUsers() {
+            const input = document.getElementById('user-search').value.toLowerCase();
+            const rows = document.getElementById('user-tbody').getElementsByTagName('tr');
+            for (let i = 0; i < rows.length; i++) {
+                const txtValue = rows[i].getElementsByTagName('td')[1].textContent;
+                rows[i].style.display = txtValue.toLowerCase().indexOf(input) > -1 ? "" : "none";
+            }
+        }
+
+        // --- MEMBERSHIP CONTROL (NEW) ---
+        function loadMembers() {
+            const tbody = document.getElementById('member-tbody');
+            tbody.innerHTML = '';
+            
+            let hasData = false;
+            allUsers.forEach(user => {
+                if(user.membership) {
+                    hasData = true;
+                    const mem = user.membership;
+                    const start = new Date(mem.startDate).toLocaleDateString();
+                    const end = new Date(mem.endDate).toLocaleDateString();
+                    const statusClass = mem.status === 'active' ? 'badge-approved' : 'badge-rejected';
+
+                    const row = `
+                        <tr>
+                            <td>${user.name || 'Unknown'}</td>
+                            <td>${user.phone}</td>
+                            <td><span class="badge badge-vip">${mem.planType.toUpperCase()}</span></td>
+                            <td>${start}</td>
+                            <td>${end}</td>
+                            <td><span class="badge ${statusClass}">${mem.status}</span></td>
+                            <td>
+                                <button class="action-btn btn-reject" onclick="deleteMembership('${user.phone}')"><i class="fas fa-trash"></i> Remove</button>
+                            </td>
+                        </tr>
+                    `;
+                    tbody.innerHTML += row;
+                }
+            });
+
+            if(!hasData) tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:20px;">No memberships found.</td></tr>';
+        }
+
+        function deleteMembership(phone) {
+            if(confirm('Are you sure you want to remove this membership?')) {
+                db.ref(`users/${phone}/membership`).set(null).then(() => {
+                    alert('Membership removed.');
+                    loadMembers();
+                    // Update local data
+                    const idx = allUsers.findIndex(u => u.phone === phone);
+                    if(idx > -1) allUsers[idx].membership = null;
+                });
+            }
+        }
+
+        // --- TASK CONTROL (NEW) ---
+        function loadTasks() {
+            const tbody = document.getElementById('tasks-tbody');
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Loading tasks...</td></tr>';
+
+            // Fetching from a new node 'adminTasks'
+            db.ref('adminTasks').once('value').then(snapshot => {
+                const tasks = snapshot.val();
+                tbody.innerHTML = '';
+                
+                if(!tasks) {
+                    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:20px;">No tasks added yet.</td></tr>';
+                    return;
+                }
+
+                Object.keys(tasks).forEach(key => {
+                    const t = tasks[key];
+                    const date = new Date(t.addedAt).toLocaleDateString();
+                    const row = `
+                        <tr>
+                            <td><span class="badge badge-pending" style="text-transform:uppercase;">${t.type}</span></td>
+                            <td><a href="${t.link}" target="_blank" style="color:var(--primary); text-decoration:none;">${t.link.substring(0, 30)}...</a></td>
+                            <td>৳${t.reward}</td>
+                            <td>${date}</td>
+                            <td>
+                                <button class="action-btn btn-reject" onclick="deleteTask('${key}')"><i class="fas fa-trash"></i></button>
+                            </td>
+                        </tr>
+                    `;
+                    tbody.innerHTML += row;
+                });
+            });
+        }
+
+        function addNewTask() {
+            const type = document.getElementById('task-type').value;
+            const link = document.getElementById('task-link').value;
+            const reward = document.getElementById('task-reward').value;
+
+            if(!link || !reward) { alert('Please fill all fields'); return; }
+
+            const newTask = {
+                type: type,
+                link: link,
+                reward: parseFloat(reward),
+                addedAt: Date.now()
+            };
+
+            db.ref('adminTasks').push(newTask).then(() => {
+                alert('Task Added Successfully!');
+                document.getElementById('task-link').value = '';
+                document.getElementById('task-reward').value = '';
+                loadTasks();
+            });
+        }
+
+        function deleteTask(key) {
+            if(confirm('Delete this task?')) {
+                db.ref(`adminTasks/${key}`).remove().then(() => loadTasks());
+            }
+        }
+
+        // --- WITHDRAWAL & DEPOSIT LOGIC (Unchanged) ---
+        function loadWithdrawals() {
+            const tbody = document.getElementById('withdraw-tbody'); tbody.innerHTML = '';
+            allUsers.forEach(user => {
+                if(user.withdrawals) user.withdrawals.forEach((w, index) => {
+                    if(w.status === 'Pending') {
+                        tbody.innerHTML += `
+                            <tr>
+                                <td><div>${user.name || 'N/A'}</div><div style="font-size:0.8rem; color:#94a3b8;">${user.phone} / ${w.account}</div></td>
+                                <td>${w.method.toUpperCase()}</td>
+                                <td style="font-weight:bold; color:var(--danger);">-৳${w.amount}</td>
+                                <td>${new Date(w.date).toLocaleDateString()}</td>
+                                <td>
+                                    <button class="action-btn btn-approve" onclick="openActionModal('withdraw', '${user.phone}', ${index}, ${w.amount}, 'approve')"><i class="fas fa-check"></i></button>
+                                    <button class="action-btn btn-reject" onclick="openActionModal('withdraw', '${user.phone}', ${index}, ${w.amount}, 'reject')"><i class="fas fa-times"></i></button>
+                                </td>
+                            </tr>`;
+                    }
+                });
+            });
+            if(tbody.innerHTML === '') tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">No Pending Withdrawals</td></tr>';
+        }
+
+        function loadDeposits() {
+            const tbody = document.getElementById('deposit-tbody'); tbody.innerHTML = '';
+            allUsers.forEach(user => {
+                if(user.deposits) user.deposits.forEach((d, index) => {
+                    if(d.status === 'Pending') {
+                        tbody.innerHTML += `
+                            <tr>
+                                <td><div>${user.name || 'N/A'}</div><div style="font-size:0.8rem; color:#94a3b8;">Sender: ${d.sender}</div></td>
+                                <td>${d.method.toUpperCase()}</td>
+                                <td style="font-size:0.75rem; font-family:monospace;">${d.trx}</td>
+                                <td style="font-weight:bold; color:var(--success);">+৳${d.amount}</td>
+                                <td>
+                                    <button class="action-btn btn-approve" onclick="openActionModal('deposit', '${user.phone}', ${index}, ${d.amount}, 'approve')"><i class="fas fa-check"></i></button>
+                                    <button class="action-btn btn-reject" onclick="openActionModal('deposit', '${user.phone}', ${index}, ${d.amount}, 'reject')"><i class="fas fa-times"></i></button>
+                                </td>
+                            </tr>`;
+                    }
+                });
+            });
+            if(tbody.innerHTML === '') tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">No Pending Deposits</td></tr>';
+        }
+
+        // --- EMAIL / NOTIFICATION LOGIC (NEW) ---
+        function openEmailModal(phone) {
+            notifyTargetUser = phone;
+            const user = allUsers.find(u => u.phone === phone);
+            document.getElementById('email-user-info').innerText = `Sending to: ${user.name} (${user.phone})`;
+            document.getElementById('notify-email').value = ''; // User enters email
+            document.getElementById('notify-subject').value = '';
+            document.getElementById('notify-message').value = '';
+            document.getElementById('email-modal').style.display = 'flex';
+        }
+
+        function closeEmailModal() {
+            document.getElementById('email-modal').style.display = 'none';
+            notifyTargetUser = null;
+        }
+
+        function saveNotification() {
+            const subject = document.getElementById('notify-subject').value;
+            const message = document.getElementById('notify-message').value;
+            
+            if(!subject || !message || !notifyTargetUser) return;
+
+            const notification = {
+                id: Date.now(),
+                subject: subject,
+                message: message,
+                date: new Date().toISOString(),
+                read: false
+            };
+
+            db.ref(`users/${notifyTargetUser}/notifications`).push(notification).then(() => {
+                alert('Notification Saved to User Account!');
+                closeEmailModal();
+            });
+        }
+
+        function sendEmail() {
+            const email = document.getElementById('notify-email').value;
+            const subject = document.getElementById('notify-subject').value;
+            const message = document.getElementById('notify-message').value;
+
+            if(!email) { alert('Please enter recipient email address.'); return; }
+
+            // Using Mailto to open default email client
+            const mailtoLink = `mailto:${email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(message)}`;
+            window.open(mailtoLink, '_blank');
+            
+            // Also save to app history
+            saveNotification();
+        }
+
+        // --- USER EDIT & TICKETS LOGIC (Unchanged) ---
+        let editingUserPhone = null;
+        function openUserModal(phone) {
+            editingUserPhone = phone;
+            const user = allUsers.find(u => u.phone === phone);
+            if(user) {
+                document.getElementById('edit-user-info').innerText = `Editing: ${user.name} (${user.phone})`;
+                document.getElementById('current-bal-display').value = user.balance;
+                document.getElementById('new-balance-input').value = user.balance;
+                document.getElementById('user-modal').style.display = 'flex';
+            }
+        }
+        function closeUserModal() { document.getElementById('user-modal').style.display = 'none'; }
+        function saveUserBalance() {
+            const newBal = parseFloat(document.getElementById('new-balance-input').value);
+            if(!isNaN(newBal) && editingUserPhone) {
+                db.ref(`users/${editingUserPhone}/balance`).set(newBal).then(() => {
+                    alert('Balance Updated!'); closeUserModal();
+                    const userIndex = allUsers.findIndex(u => u.phone === editingUserPhone);
+                    if(userIndex > -1) allUsers[userIndex].balance = newBal;
+                    loadUsers();
+                });
+            }
+        }
+
+        let currentTicket = null;
+        function loadTickets() {
+            const tbody = document.getElementById('ticket-tbody'); tbody.innerHTML = '';
+            allUsers.forEach(user => {
+                if(user.supportTickets) {
+                    user.supportTickets.forEach((t, index) => {
+                        if(t.status === 'open' || t.status === 'pending') {
+                            tbody.innerHTML += `
+                                <tr>
+                                    <td>${user.name || user.phone}</td>
+                                    <td>${t.subject}</td>
+                                    <td><span class="badge badge-pending">${t.status}</span></td>
+                                    <td><button class="action-btn btn-view" onclick="openTicketModal('${user.phone}', ${index})">Reply</button></td>
+                                </tr>`;
+                        }
+                    });
+                }
+            });
+            if(tbody.innerHTML === '') tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;">No Open Tickets</td></tr>';
+        }
+
+        function openTicketModal(phone, index) {
+            currentTicket = { phone, index };
+            const user = allUsers.find(u => u.phone === phone);
+            const ticket = user.supportTickets[index];
+            const historyDiv = document.getElementById('ticket-history-view');
+            historyDiv.innerHTML = `<div style="margin-bottom:5px;"><strong>User:</strong> ${ticket.message}</div>
+                                  ${ticket.adminReply ? `<div style="margin-bottom:5px; color:var(--primary);"><strong>Admin:</strong> ${ticket.adminReply}</div>` : ''}`;
+            document.getElementById('ticket-modal').style.display = 'flex';
+        }
+        function closeTicketModal() { document.getElementById('ticket-modal').style.display = 'none'; currentTicket = null; }
+        function submitTicketReply() {
+            const reply = document.getElementById('ticket-reply-text').value;
+            if(reply && currentTicket) {
+                const { phone, index } = currentTicket;
+                db.ref(`users/${phone}/supportTickets/${index}`).update({ status: 'closed', adminReply: reply }).then(() => {
+                    alert('Reply Sent!'); closeTicketModal(); loadTickets();
+                });
+            }
+        }
+
+        // --- MODAL ACTIONS (Approve/Reject) ---
+        function openActionModal(type, phone, index, amount, action) {
+            currentAction = { type, phone, index, amount, action };
+            const title = document.getElementById('modal-title');
+            const desc = document.getElementById('modal-desc');
+            const btn = document.getElementById('modal-confirm-btn');
+
+            if(action === 'approve') {
+                title.innerText = "Approve Request"; desc.innerText = `Approve this ${type} of ৳${amount}?`;
+                btn.style.background = "var(--success)"; btn.innerText = "Approve";
+            } else {
+                title.innerText = "Reject Request"; desc.innerText = `Reject this ${type} of ৳${amount}?`;
+                btn.style.background = "var(--danger)"; btn.innerText = "Reject";
+            }
+            document.getElementById('action-modal').style.display = 'flex';
+        }
+        function closeModal() { document.getElementById('action-modal').style.display = 'none'; currentAction = null; }
+
+        document.getElementById('modal-confirm-btn').addEventListener('click', () => {
+            if(!currentAction) return;
+            const { type, phone, index, amount, action } = currentAction;
+            const status = action === 'approve' ? 'Approved' : 'Rejected';
+            db.ref(`users/${phone}/${type}s/${index}/status`).set(status).then(() => {
+                if(type === 'withdraw' && action === 'reject') {
+                    db.ref(`users/${phone}/balance`).transaction(bal => (bal || 0) + amount);
+                    alert('Withdrawal Rejected. Money refunded.');
+                } else if(type === 'deposit' && action === 'approve') {
+                    db.ref(`users/${phone}/balance`).transaction(bal => (bal || 0) + amount);
+                    alert('Deposit Approved. Money added.');
+                } else {
+                    alert('Request Processed.');
+                }
+                closeModal();
+                if(type === 'withdraw') loadWithdrawals(); if(type === 'deposit') loadDeposits();
+            }).catch(err => alert('Error: ' + err.message));
+        });
+
+    </script>
+</body>
+</html>
